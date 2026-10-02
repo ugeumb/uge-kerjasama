@@ -77,6 +77,7 @@ async function pgBeranda(el) {
       <div style="--c:#D9A441"><div class="l">Segera berakhir</div><div class="n">${angka(r.segera)}</div><div class="s">dalam ${S.opsi.ambang_segera} hari</div></div>
       <div style="--c:var(--bad)"><div class="l">Sudah berakhir</div><div class="n">${angka(r.kedaluwarsa)}</div><div class="s">perlu diperpanjang</div></div>
       <div style="--c:var(--gold-500)"><div class="l">Implementasi ${d.tahun}</div><div class="n">${angka(d.implementasi.total)}</div><div class="s">${d.implementasi.terverifikasi} terverifikasi</div></div></div>
+    ${kermaPanel(d.kerma)}
     <div class="grid g3 mb">
       <section class="panel"><div class="panel-kepala"><h3>Status masa berlaku</h3></div><div class="panel-isi"><div class="donat-wrap">
         ${donat([{ nilai: r.aktif, warna: '#1D7A55' }, { nilai: r.segera, warna: '#D9A441' }, { nilai: r.kedaluwarsa, warna: '#B0352D' }], 'Status masa berlaku dokumen')}
@@ -100,6 +101,16 @@ async function pgBeranda(el) {
         <a class="btn btn-ghost btn-sm" href="#/implementasi">Buka implementasi</a></div></section></div>`;
   isiRank();
 }
+function kermaPanel(k) {
+  if (!k) return '';
+  const pct = k.total ? Math.round(k.sudah / k.total * 100) : 0;
+  return `<div class="grid g2b mb"><section class="panel"><div class="panel-kepala"><h3>Pelaporan ke KERMA Dikti</h3></div><div class="panel-isi">
+    <p style="font-family:var(--f-display);font-size:34px;font-weight:600;margin:0;color:var(--navy-900)">${k.sudah}<span style="font-size:20px;color:var(--muted)"> dari ${k.total}</span></p>
+    <p style="margin:2px 0 12px">dokumen sudah diunggah ke Website KERMA Dikti (${pct}%).</p><div class="tumpuk-bar" style="height:12px"><i style="width:${pct}%;background:var(--ok)"></i></div>
+    <div style="display:flex;gap:18px;font-size:14px;margin:8px 0 16px"><span>${lencana('Sudah', 'ok')} ${k.sudah}</span><span>${lencana('Belum', 'warn')} ${k.belum}</span></div>
+    <a class="btn btn-ghost btn-sm" href="#/dokumen" data-aksi="kerma-filter-belum">Lihat yang belum diunggah</a><p class="hint" style="margin-top:10px">Berita Acara tidak dihitung.</p></div></section>
+    <section class="panel"><div class="panel-kepala"><h3>Belum diunggah ke KERMA Dikti</h3></div>${k.belum_daftar.length ? `<ul class="daftar-hal">${k.belum_daftar.map(x => `<li><div style="display:flex;gap:12px;justify-content:space-between;align-items:center;padding:12px 20px;border-bottom:1px solid var(--line-2)"><a href="#/dokumen/lihat/${x.id}" style="text-decoration:none;color:inherit"><b>${esc(x.mitra_nama)}</b><div class="sub">${esc(x.jenis)} ${esc(x.nomor)}, ditandatangani ${tglPendek(x.tgl_ttd)}</div></a><button class="btn btn-ghost btn-sm" data-aksi="kerma-buka" data-id="${x.id}">Tandai</button></div></li>`).join('')}</ul>${k.belum > k.belum_daftar.length ? `<div class="tabel-kaki">dan ${k.belum - k.belum_daftar.length} dokumen lain</div>` : ''}` : '<div class="kosong">Semua dokumen sudah diunggah ke KERMA Dikti.</div>'}</section></div>`;
+}
 function isiRank() {
   const w = $('#rank-isi'); if (!w || !S.dash) return;
   const daftar = (S.dash.peringkat[S.rank.valid ? 'valid' : 'semua'] || []).filter(x => x.jenis === S.rank.jenis).slice(0, 10);
@@ -114,7 +125,7 @@ AKSI['rank-valid'] = t => { S.rank.valid = t.checked; isiRank(); };
 AKSI['saring-validasi'] = () => { F.validasi = 'menunggu'; };
 
 /* ===================== DAFTAR DOKUMEN ===================== */
-const F = { q: '', masa: 'semua', jenis: '', cakupan: '', unit: '', validasi: '', urut: 'prioritas' };
+const F = { q: '', masa: 'semua', jenis: '', cakupan: '', unit: '', validasi: '', kerma: '', urut: 'prioritas' };
 const URUT_MASA = { segera: 0, aktif: 1, tanpa_batas: 2, kedaluwarsa: 3 };
 
 async function pgDokumen(el, lihatId) {
@@ -128,6 +139,7 @@ async function pgDokumen(el, lihatId) {
       <select class="inp" data-ubah="dok-f" data-k="cakupan" aria-label="Cakupan"><option value="">Semua cakupan</option>${S.opsi.daftar.CAKUPAN.map(j => `<option ${F.cakupan === j ? 'selected' : ''}>${j}</option>`).join('')}</select>
       ${unitAda.length > 1 ? `<select class="inp" data-ubah="dok-f" data-k="unit" aria-label="Unit"><option value="">Semua unit</option>${unitAda.map(j => `<option ${F.unit === j ? 'selected' : ''}>${esc(j)}</option>`).join('')}</select>` : ''}
       <select class="inp" data-ubah="dok-f" data-k="validasi" aria-label="Validasi"><option value="">Semua status validasi</option><option value="menunggu" ${F.validasi === 'menunggu' ? 'selected' : ''}>Menunggu validasi</option><option value="valid" ${F.validasi === 'valid' ? 'selected' : ''}>Tervalidasi</option><option value="perbaikan" ${F.validasi === 'perbaikan' ? 'selected' : ''}>Perlu perbaikan</option></select>
+      ${ada('kerma') ? `<select class="inp" data-ubah="dok-f" data-k="kerma" aria-label="KERMA Dikti"><option value="">Semua status KERMA</option><option value="sudah" ${F.kerma === 'sudah' ? 'selected' : ''}>Sudah diunggah ke KERMA</option><option value="belum" ${F.kerma === 'belum' ? 'selected' : ''}>Belum diunggah ke KERMA</option></select>` : ''}
       <select class="inp" data-ubah="dok-f" data-k="urut" aria-label="Urutan"><option value="prioritas" ${F.urut === 'prioritas' ? 'selected' : ''}>Urut masa berlaku</option><option value="terbaru" ${F.urut === 'terbaru' ? 'selected' : ''}>Terbaru ditandatangani</option><option value="mitra" ${F.urut === 'mitra' ? 'selected' : ''}>Nama mitra</option></select></div>
       <div class="segmen" id="dok-segmen"></div><div id="dok-daftar"></div></div>`;
   renderDok();
@@ -143,7 +155,7 @@ function terapkanDok(abaikanMasa) {
   return S.dok.filter(d =>
     (!q || [d.mitra_nama, d.nomor, d.nomor_mitra, d.judul, d.unit_nama].join(' ').toLowerCase().includes(q)) &&
     (!F.jenis || d.jenis === F.jenis) && (!F.cakupan || d.cakupan === F.cakupan) && (!F.unit || d.unit_nama === F.unit) &&
-    (!F.validasi || d.status_validasi === F.validasi) && (abaikanMasa || F.masa === 'semua' || d.status_masa === F.masa));
+    (!F.validasi || d.status_validasi === F.validasi) && (!F.kerma || (F.kerma === 'sudah' ? d.kerma_status === '1' : (d.kerma_status !== '1' && d.jenis !== 'Berita Acara'))) && (abaikanMasa || F.masa === 'semua' || d.status_masa === F.masa));
 }
 function renderDok() {
   const w = $('#dok-daftar'); if (!w) return;
@@ -161,14 +173,43 @@ function renderDok() {
   });
   if (!l.length) { w.innerHTML = `<div class="kosong"><h3>${S.dok.length ? 'Tidak ada dokumen yang cocok' : 'Belum ada dokumen'}</h3><p>${S.dok.length ? 'Ubah kata kunci atau filter untuk melihat dokumen lain.' : 'Dokumen yang diunggah akan muncul di sini.'}</p>${ada('unggah') && !S.dok.length ? `<a class="btn btn-utama" href="#/dokumen/baru">Unggah dokumen pertama</a>` : ''}</div>`; return; }
   const masaTeks = d => d.status_masa === 'tanpa_batas' ? 'Tanpa batas waktu' : `${tglPendek(d.tgl_ttd)} s.d. ${tglPendek(d.tgl_berakhir)}`;
-  w.innerHTML = `<div class="tbl-wrap"><table class="tabel"><thead><tr><th>Mitra</th><th>Dokumen</th><th>Unit</th><th>Masa berlaku</th><th>Status</th></tr></thead><tbody>${l.map(d => `<tr data-aksi="dok-buka" data-id="${d.id}">
+  w.innerHTML = `<div class="tbl-wrap"><table class="tabel"><thead><tr><th>Mitra</th><th>Dokumen</th><th>Unit</th><th>Masa berlaku</th><th>Status</th>${ada('kerma') ? '<th>KERMA Dikti</th>' : ''}</tr></thead><tbody>${l.map(d => `<tr data-aksi="dok-buka" data-id="${d.id}">
     <td><a class="tautan" href="#/dokumen/lihat/${d.id}">${esc(d.mitra_nama)}</a><div class="sub">${esc(d.cakupan)}${d.cakupan === 'Luar Negeri' && d.negara ? ', ' + esc(d.negara) : ''}</div></td>
     <td>${lJenis(d)} <span>${esc(d.nomor || d.nomor_mitra)}</span><div class="sub">${esc(d.judul)}</div></td><td>${esc(d.unit_nama)}<div class="sub">Ditandatangani ${esc(d.level_ttd)}</div></td>
-    <td>${masaTeks(d)}${d.sisa_hari != null ? `<div class="sub">${teksSisa(d.sisa_hari)}</div>` : ''}</td><td>${lMasa(d.status_masa)}<div style="margin-top:4px">${lVal(d.status_validasi)}</div></td></tr>`).join('')}</tbody></table></div>
+    <td>${masaTeks(d)}${d.sisa_hari != null ? `<div class="sub">${teksSisa(d.sisa_hari)}</div>` : ''}</td><td>${lMasa(d.status_masa)}<div style="margin-top:4px">${lVal(d.status_validasi)}</div></td>${ada('kerma') ? `<td>${lKerma(d)}</td>` : ''}</tr>`).join('')}</tbody></table></div>
     <div class="kartu-daftar">${l.map(d => `<a class="kartu" href="#/dokumen/lihat/${d.id}" style="text-decoration:none;color:inherit"><div style="display:flex;justify-content:space-between;gap:8px"><b>${esc(d.mitra_nama)}</b>${lMasa(d.status_masa)}</div>
-      <div>${lJenis(d)} ${esc(d.nomor || d.nomor_mitra)}</div><div class="sub">${esc(d.judul)}</div><div class="sub">${esc(d.unit_nama)}, ${masaTeks(d)}</div></a>`).join('')}</div>
+      <div>${lJenis(d)} ${esc(d.nomor || d.nomor_mitra)}</div><div class="sub">${esc(d.judul)}</div><div class="sub">${esc(d.unit_nama)}, ${masaTeks(d)}</div>${ada('kerma') && d.jenis !== 'Berita Acara' ? `<div>${d.kerma_status === '1' ? lencana('KERMA: sudah diunggah', 'ok') : lencana('KERMA: belum diunggah', 'warn')}</div>` : ''}</a>`).join('')}</div>
     <div class="tabel-kaki">Menampilkan ${l.length} dari ${S.dok.length} dokumen</div>`;
 }
+
+function lKerma(d) {
+  if (d.jenis === 'Berita Acara') return '<span class="kecil">Tidak berlaku</span>';
+  return d.kerma_status === '1'
+    ? `<button type="button" class="kerma-tombol sudah" data-aksi="kerma-buka" data-id="${d.id}" title="Ubah status">${ikon('cek', 14)} Sudah diunggah</button>${d.kerma_tgl ? `<div class="sub">${tglPendek(d.kerma_tgl)}</div>` : ''}`
+    : `<button type="button" class="kerma-tombol belum" data-aksi="kerma-buka" data-id="${d.id}" title="Tandai sudah diunggah">Belum diunggah</button>`;
+}
+function cariDokKerma(id) {
+  return (S.dok || []).find(x => x.id === id) || (S.detail && S.detail.dokumen.id === id ? S.detail.dokumen : null) || (S.dash && S.dash.kerma ? S.dash.kerma.belum_daftar.find(x => x.id === id) : null);
+}
+async function segarkanKerma(id) {
+  if (S.hal === 'dokumen') { S.dok = await api('daftarDokumen'); renderDok(); }
+  else if ((location.hash || '#/beranda').indexOf('#/beranda') === 0) pgBeranda($('#isi'));
+  if (S.laci && S.detail && S.detail.dokumen.id === id) { const r = await api('detailDokumen', { id }); S.detail = r; S.laci.isi.innerHTML = isiDetailDok(r); }
+}
+AKSI['kerma-filter-belum'] = () => { F.kerma = 'belum'; };
+AKSI['kerma-buka'] = t => {
+  const d = cariDokKerma(t.dataset.id); if (!d) return;
+  const sudah = d.kerma_status === '1', id = d.id;
+  const tombol = [{ label: 'Tutup', aksi: () => m.tutup() }];
+  if (sudah) tombol.push({ label: 'Batalkan tanda', aksi: async () => { await api('tandaiKerma', { id, status: '' }); m.tutup(); toast('Tanda KERMA Dikti dibatalkan', 'ok'); await segarkanKerma(id); } });
+  tombol.push({ label: sudah ? 'Simpan perubahan' : 'Tandai sudah diunggah', kelas: 'btn-utama', aksi: async () => {
+    await api('tandaiKerma', { id, status: '1', tgl: $('#k-tgl').value, catatan: $('#k-cat').value }); m.tutup(); toast('Tersimpan: dokumen ditandai sudah diunggah ke KERMA Dikti', 'ok'); await segarkanKerma(id);
+  } });
+  const m = modal({ judul: 'Status KERMA Dikti', lebar: 500, tombol,
+    isi: `<p><b>${esc(d.mitra_nama)}</b><br><span class="kecil">${esc(d.jenis)} ${esc(d.nomor || d.nomor_mitra || '')}</span></p><div class="tumpuk">
+      <div class="medan"><label>Tanggal diunggah ke Website KERMA Dikti</label><input class="inp" type="date" id="k-tgl" max="${hariIniStr()}" value="${esc(sudah && d.kerma_tgl ? d.kerma_tgl : hariIniStr())}"></div>
+      <div class="medan"><label>Catatan (opsional)</label><input class="inp" id="k-cat" value="${esc(d.kerma_catatan || '')}" placeholder="Contoh: nomor registrasi di KERMA Dikti"></div></div>` });
+};
 
 /* ===================== DETAIL DOKUMEN ===================== */
 async function bukaDetailDok(id) {
@@ -192,6 +233,9 @@ function isiDetailDok(r) {
   const dokTerkait = (r.induk ? `<div class="bag-judul">Dokumen induk</div><div class="mini-daftar"><a class="mini" href="#/dokumen/lihat/${r.induk.id}"><span><b>${esc(r.induk.jenis)}</b> ${esc(r.induk.nomor)}<div class="sub">${esc(r.induk.judul)}</div></span></a></div>` : '') +
     (r.turunan.length ? `<div class="bag-judul">Dokumen turunan (${r.turunan.length})</div><div class="mini-daftar">${r.turunan.map(x => `<a class="mini" href="#/dokumen/lihat/${x.id}"><span>${lJenis(x)} ${esc(x.nomor || x.nomor_mitra)}<div class="sub">${esc(x.judul)}, ${esc(x.unit_nama)}</div></span>${lMasa(x.status_masa)}</a>`).join('')}</div>` : '');
   const impl = `<div class="bag-judul">Implementasi (${r.implementasi.length})</div>` + (r.implementasi.length ? `<div class="mini-daftar">${r.implementasi.map(x => `<a class="mini" href="#/implementasi"><span><b>${esc(x.judul)}</b><div class="sub">${tglPendek(x.tgl_mulai)}, ${esc(x.unit_nama)}</div></span>${lVal(x.status_validasi, true)}</a>`).join('')}</div>` : '<p class="kecil">Belum ada kegiatan yang dilaporkan untuk dokumen ini.</p>');
+  const kermaBag = ada('kerma') && d.jenis !== 'Berita Acara' ? `<div class="bag-judul">Pelaporan KERMA Dikti</div><div class="berkas">${d.kerma_status === '1' ? lencana('Sudah diunggah', 'ok') : lencana('Belum diunggah', 'warn')}
+    <span class="nama" style="font-weight:400">${d.kerma_status === '1' ? `Diunggah ${tgl(d.kerma_tgl)} oleh ${esc(d.kerma_oleh)}${d.kerma_catatan ? ', ' + esc(d.kerma_catatan) : ''}` : 'Dokumen ini belum dilaporkan ke Website KERMA Dikti.'}</span>
+    <button class="btn btn-ghost btn-sm" data-aksi="kerma-buka" data-id="${d.id}">${d.kerma_status === '1' ? 'Ubah status' : 'Tandai sudah diunggah'}</button></div>` : '';
   return `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">${tombol.join('')}</div>${catatan}
     <h2 style="margin-bottom:8px">${esc(d.mitra_nama)}</h2><div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px">${lJenis(d)}${lMasa(d.status_masa)}${lVal(d.status_validasi)}${d.cakupan ? lencana(d.cakupan, 'info') : ''}</div>
     <div class="bag-judul">Informasi dokumen</div><dl class="info">${baris('Judul', esc(d.judul))}${baris('Nomor UMB', esc(d.nomor))}${baris('Nomor mitra', esc(d.nomor_mitra))}${baris('Bidang kerja sama', esc(d.bidang.split('; ').join(', ')))}${baris('Ringkasan', esc(d.ringkasan).replace(/\n/g, '<br>'))}</dl>
@@ -203,7 +247,7 @@ function isiDetailDok(r) {
       <button class="btn btn-ghost btn-sm" data-aksi="pdf" data-j="dok" data-id="${d.id}" data-mode="lihat">${ikon('mata', 15)} Lihat</button>
       ${ada('unduh') ? `<button class="btn btn-utama btn-sm" data-aksi="pdf" data-j="dok" data-id="${d.id}" data-mode="unduh">${ikon('unduh', 15)} Unduh</button>` : ''}</div>
       ${ada('unduh') ? '' : '<p class="hint" style="margin-top:6px">Peran Anda dapat melihat berkas, tetapi tidak dapat mengunduhnya.</p>'}` : '<p class="kecil">Tidak ada berkas.</p>'}
-    ${dokTerkait}${impl}
+    ${kermaBag}${dokTerkait}${impl}
     ${r.penerima_pengingat ? `<div class="bag-judul">Penerima pengingat otomatis</div><p class="kecil">${r.penerima_pengingat.length ? esc(r.penerima_pengingat.join(', ')) : 'Belum ada penerima valid.'}</p>` : ''}
     ${r.riwayat ? `<div class="bag-judul">Riwayat</div>${r.riwayat.length ? `<ul class="garis-waktu">${r.riwayat.map(x => `<li><b>${esc(x.aksi.replace(/_/g, ' '))}</b> oleh ${esc(x.pelaku)}<div class="sub">${esc(x.waktu)}${x.detail ? ', ' + esc(x.detail) : ''}</div></li>`).join('')}</ul>` : '<p class="kecil">Belum ada riwayat.</p>'}` : ''}`;
 }
@@ -274,6 +318,7 @@ async function pgFormDok(el, id, indukAwal) {
     <section class="bagian"><h3>Berkas dokumen<small>Format PDF, maksimal ${S.opsi.maks_pdf_mb} MB. Gunakan hasil pindai yang sudah ditandatangani kedua pihak.</small></h3><div class="isi-b">
       <label class="kotak-berkas" for="berkas"><span style="color:var(--navy-700)">${ikon('unggah', 26)}</span><span><span class="nama" id="nama-berkas">${id && L.ada_file ? 'Berkas saat ini: ' + esc(L.file_nama) : 'Pilih berkas PDF'}</span><br><span class="hint">${id ? 'Pilih berkas baru hanya jika ingin menggantinya.' : 'Klik untuk memilih berkas dari perangkat Anda.'}</span></span></label>
       <input type="file" id="berkas" accept="application/pdf,.pdf" data-ubah="dok-berkas" style="position:absolute;opacity:0;width:1px;height:1px"></div></section>
+    ${ada('kerma') ? `<section class="bagian"><h3>Pelaporan KERMA Dikti</h3><div class="isi-b"><label class="centang"><input type="checkbox" name="kerma_status" ${L.kerma_status === '1' ? 'checked' : ''}> Dokumen ini sudah diunggah ke Website KERMA Dikti</label></div></section>` : ''}
     <div class="bar-aksi"><span class="pesan" id="f-pesan" role="alert"></span><a class="btn btn-ghost" href="#/dokumen${id ? '/lihat/' + id : ''}">Batal</a><button class="btn btn-utama" type="submit">${ikon('cek')} ${id ? 'Simpan perubahan' : 'Simpan dokumen'}</button></div></form>`;
   const kb = pasangKombo($('#k-mitra'), {
     ambil: () => S.mitra.map(mitraItem), kosong: 'Mitra tidak ditemukan',
@@ -308,7 +353,7 @@ AKSI.durasi = t => {
 KIRIM.dok = async f => {
   const b = $('button[type=submit]', f), pesan = $('#f-pesan'); pesan.textContent = '';
   const fd = new FormData(f), d = Object.fromEntries(fd.entries());
-  d.bidang = fd.getAll('bidang'); d.tanpa_batas = fd.get('tanpa_batas') ? '1' : '0'; if (S.formDok.id) d.id = S.formDok.id;
+  d.bidang = fd.getAll('bidang'); d.tanpa_batas = fd.get('tanpa_batas') ? '1' : '0'; if (ada('kerma')) d.kerma_status = fd.get('kerma_status') ? '1' : ''; if (S.formDok.id) d.id = S.formDok.id;
   muatTombol(b, true, 'Menyimpan');
   try {
     d.file = await bacaPdf($('#berkas').files[0]);

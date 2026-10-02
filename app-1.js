@@ -216,7 +216,7 @@ const PERAN_DAFTAR = [
 async function tampilMasuk() {
   document.title = 'Masuk | Sistem Kerja Sama UMB';
   $('#app').innerHTML = `<div class="masuk">
-    <section class="masuk-kiri"><div><div class="merek" style="border:0;padding:0"><div class="monogram">${KONFIG.SINGKAT}</div><div><b style="color:#fff">${esc(KONFIG.INSTANSI)}</b><span>${esc(KONFIG.UNIVERSITAS)}</span></div></div>
+    <section class="masuk-kiri"><div><div class="merek" style="border:0;padding:0"><img class="logo-merek besar" src="logo.png" alt="Logo Universitas Muhammadiyah Bengkulu"><div><b style="color:#fff">${esc(KONFIG.INSTANSI)}</b><span>${esc(KONFIG.UNIVERSITAS)}</span></div></div>
       <h1>Satu pangkalan data untuk seluruh kerja sama kampus.</h1>
       <p>Catat MoU, MoA, dan IA, pantau masa berlakunya, dan laporkan implementasinya dari satu tempat. Pengingat dikirim otomatis sebelum dokumen berakhir.</p></div>
       <p class="kecil" style="color:#8FA2C0">Akses hanya untuk admin yang terverifikasi oleh tim UGE.</p></section>
@@ -240,7 +240,7 @@ function tampilAuth() {
       <div class="medan"><label>Nama lengkap dengan gelar <span class="wajib">*</span></label><input class="inp" name="nama" required autocomplete="name"></div>
       <div class="baris2"><div class="medan"><label>Email <span class="wajib">*</span></label><input class="inp" name="email" type="email" required autocomplete="email"></div>
       <div class="medan"><label>Nomor WhatsApp <span class="wajib">*</span></label><input class="inp" name="wa" inputmode="tel" placeholder="08xxxxxxxxxx" required></div></div>
-      <div class="baris2"><div class="medan"><label>NIDN / NUPTK <span class="wajib">*</span></label><input class="inp" name="nidn_nuptk" required><span class="hint">Staf nondosen dapat mengisi NIP atau NIK internal UMB.</span></div>
+      <div class="baris2"><div class="medan"><label>NP (Nomor Pegawai) <span class="wajib">*</span></label><input class="inp" name="nidn_nuptk" required><span class="hint">Karyawan kontrak yang belum memiliki NP cukup mengisi 0000.</span></div>
       <div class="medan"><label>Jabatan <span class="wajib">*</span></label><input class="inp" name="jabatan" placeholder="Contoh: Ketua Program Studi" required></div></div>
       <div class="medan"><label>Peran <span class="wajib">*</span></label><select class="inp" name="role" data-ubah="peran-daftar" required><option value="">Pilih peran</option>${PERAN_DAFTAR.map(p => `<option value="${p[0]}">${esc(p[1])}</option>`).join('')}</select></div>
       <div class="medan" id="w-unit" hidden><label>Unit kerja <span class="wajib">*</span></label><select class="inp" name="unit_id"></select></div>
@@ -334,7 +334,7 @@ function mulaiAplikasi() {
   if (ada('pengguna')) menu.push({ g: 'Administrasi' }, { h: '#/pengguna', t: 'Pengguna', i: 'pengguna', nb: 1 }, { h: '#/unit', t: 'Unit dan fakultas', i: 'unit' });
   if (ada('log')) menu.push({ h: '#/log', t: 'Log aktivitas', i: 'log' });
   $('#app').innerHTML = `<div class="shell"><aside class="sisi" id="sisi">
-      <div class="merek"><div class="monogram">${KONFIG.SINGKAT}</div><div><b>Kerja Sama</b><span>${esc(KONFIG.INSTANSI)}</span></div></div>
+      <div class="merek"><img class="logo-merek" src="logo.png" alt="Logo UMB"><div><b>Kerja Sama</b><span>${esc(KONFIG.INSTANSI)}</span></div></div>
       <nav class="nav" aria-label="Menu utama">${menu.map(m => m.g ? `<div class="nav-grup">${m.g}</div>` :
         `<a href="${m.h}" data-nav="${m.h}">${ikon(m.i)}<span>${m.t}</span>${m.nb ? '<span class="nb" id="nb-pengguna" hidden></span>' : ''}</a>`).join('')}</nav>
       <div class="sisi-kaki">${esc(KONFIG.UNIVERSITAS)}</div></aside><div class="tabir" data-aksi="tutup-nav"></div>

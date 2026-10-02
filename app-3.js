@@ -217,7 +217,7 @@ AKSI['user-ubah'] = t => {
   const roleOpts = ['admin_utama', 'admin_prodi', 'admin_fakultas', 'admin_rektorat'].map(r => `<option value="${r}" ${u.role === r ? 'selected' : ''}>${esc(LABEL_PERAN[r])}</option>`).join('');
   const m = modal({ judul: 'Ubah data pengguna', lebar: 560, isi: `<form id="f-user" class="tumpuk" onsubmit="return false">
     <div class="medan"><label>Nama</label><input class="inp" name="nama" value="${esc(u.nama)}"></div>
-    <div class="baris2"><div class="medan"><label>WhatsApp</label><input class="inp" name="wa" value="${esc(u.wa)}"></div><div class="medan"><label>NIDN / NUPTK</label><input class="inp" name="nidn_nuptk" value="${esc(u.nidn_nuptk)}"></div></div>
+    <div class="baris2"><div class="medan"><label>WhatsApp</label><input class="inp" name="wa" value="${esc(u.wa)}"></div><div class="medan"><label>NP</label><input class="inp" name="nidn_nuptk" value="${esc(u.nidn_nuptk)}"></div></div>
     <div class="medan"><label>Jabatan</label><input class="inp" name="jabatan" value="${esc(u.jabatan)}"></div>
     <div class="medan"><label>Peran</label><select class="inp" name="role" data-ubah="user-peran">${roleOpts}</select></div>
     <div class="medan" id="u-unit-w" ${u.role === 'admin_utama' ? 'hidden' : ''}><label>Unit kerja</label><select class="inp" name="unit_id">${opsiUnitHtml(S.opsi.unit, u.unit_id)}</select></div></form>`,
@@ -281,7 +281,7 @@ async function pgLog(el) {
 }
 async function pgProfil(el) {
   S.hal = 'profil'; const u = S.user;
-  el.innerHTML = judulHal('Profil saya') + `<div class="grid g2b"><section class="panel"><div class="panel-kepala"><h3>Data akun</h3></div><div class="panel-isi"><dl class="info">${baris('Nama', esc(u.nama))}${baris('Email', esc(u.email))}${baris('WhatsApp', esc(u.wa))}${baris('NIDN / NUPTK', esc(u.nidn_nuptk))}${baris('Jabatan', esc(u.jabatan))}${baris('Peran', esc(LABEL_PERAN[u.role]))}${baris('Unit', esc(u.unit_nama))}</dl>
+  el.innerHTML = judulHal('Profil saya') + `<div class="grid g2b"><section class="panel"><div class="panel-kepala"><h3>Data akun</h3></div><div class="panel-isi"><dl class="info">${baris('Nama', esc(u.nama))}${baris('Email', esc(u.email))}${baris('WhatsApp', esc(u.wa))}${baris('NP', esc(u.nidn_nuptk))}${baris('Jabatan', esc(u.jabatan))}${baris('Peran', esc(LABEL_PERAN[u.role]))}${baris('Unit', esc(u.unit_nama))}</dl>
     <p class="hint" style="margin-top:14px">Untuk mengubah data akun, hubungi Superadmin UGE.</p></div></section>
     <section class="panel"><div class="panel-kepala"><h3>Ganti kata sandi</h3></div><div class="panel-isi"><form data-kirim="sandi" class="tumpuk" novalidate>
       <div class="medan"><label>Kata sandi saat ini</label><input class="inp" type="password" name="lama" autocomplete="current-password"></div>
