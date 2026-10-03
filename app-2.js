@@ -14,7 +14,11 @@ function opsiUnitHtml(daftar, pilih) {
   const sel = id => id === pilih ? ' selected' : '';
   const rk = daftar.filter(x => x.jenis === 'rektorat'), fk = daftar.filter(x => x.jenis === 'fakultas'), pr = daftar.filter(x => x.jenis === 'prodi');
   let h = '<option value="">Pilih unit</option>';
-  if (rk.length) h += `<optgroup label="Rektorat, unit, lembaga, dan biro">${rk.map(x => `<option value="${x.id}"${sel(x.id)}>${esc(x.nama)}</option>`).join('')}</optgroup>`;
+  if (rk.length) {
+    const g = {}, urut = [];
+    rk.forEach(x => { const k = x.kategori || 'Rektorat, unit, lembaga, dan biro'; if (!g[k]) { g[k] = []; urut.push(k); } g[k].push(x); });
+    h += urut.map(k => `<optgroup label="${esc(k)}">${g[k].map(x => `<option value="${x.id}"${sel(x.id)}>${esc(x.nama)}</option>`).join('')}</optgroup>`).join('');
+  }
   if (fk.length) h += `<optgroup label="Fakultas">${fk.map(x => `<option value="${x.id}"${sel(x.id)}>${esc(x.nama)}</option>`).join('')}</optgroup>`;
   const grup = {}; pr.forEach(x => { (grup[x.fakultas_id] = grup[x.fakultas_id] || []).push(x); });
   Object.keys(grup).forEach(fid => {

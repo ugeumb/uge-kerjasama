@@ -242,10 +242,11 @@ function renderUnit() {
   const w = $('#unit-isi'); if (!w) return;
   const J = [['prodi', 'Program studi'], ['fakultas', 'Fakultas'], ['rektorat', 'Rektorat, unit, lembaga, biro']];
   $('#unit-segmen').innerHTML = J.map(j => `<button class="${TAB_UNIT === j[0] ? 'aktif' : ''}" data-aksi="unit-tab" data-t="${j[0]}">${j[1]}<span>${S.unitSemua.filter(u => u.jenis === j[0]).length}</span></button>`).join('');
-  const l = S.unitSemua.filter(u => u.jenis === TAB_UNIT).sort((a, b) => a.nama.localeCompare(b.nama));
+  const kat = (S.opsi.daftar.KATEGORI_UNIT || {})[TAB_UNIT] || [], idx = u => { const i = kat.indexOf(u.kategori); return i < 0 ? 99 : i; };
+  const l = S.unitSemua.map((u, i) => [u, i]).filter(x => x[0].jenis === TAB_UNIT).sort((a, b) => idx(a[0]) - idx(b[0]) || a[1] - b[1]).map(x => x[0]);
   if (!l.length) { w.innerHTML = '<div class="kosong"><h3>Belum ada data</h3><p>Tambahkan unit satu per satu atau gunakan impor daftar.</p></div>'; return; }
   const fak = id => (S.unitSemua.find(x => x.id === id) || {}).nama || '';
-  w.innerHTML = `<div class="tbl-wrap"><table class="tabel"><thead><tr><th>Nama</th>${TAB_UNIT === 'prodi' ? '<th>Fakultas</th>' : ''}<th>Status</th><th></th></tr></thead><tbody>${l.map(u => `<tr><td><b>${esc(u.nama)}</b></td>${TAB_UNIT === 'prodi' ? `<td>${esc(fak(u.fakultas_id))}</td>` : ''}<td>${u.aktif === '0' ? lencana('Nonaktif', 'abu') : lencana('Aktif', 'ok')}</td><td><button class="btn btn-ghost btn-sm" data-aksi="unit-ubah" data-id="${u.id}">${ikon('ubah', 14)} Ubah</button></td></tr>`).join('')}</tbody></table></div><div class="tabel-kaki">${l.length} unit</div>`;
+  w.innerHTML = `<div class="tbl-wrap"><table class="tabel"><thead><tr><th>Nama</th>${TAB_UNIT === 'prodi' ? '<th>Fakultas</th>' : ''}${TAB_UNIT !== 'fakultas' ? '<th>Kategori</th>' : ''}<th>Status</th><th></th></tr></thead><tbody>${l.map(u => `<tr><td><b>${esc(u.nama)}</b></td>${TAB_UNIT === 'prodi' ? `<td>${esc(fak(u.fakultas_id))}</td>` : ''}${TAB_UNIT !== 'fakultas' ? `<td>${u.kategori ? lencana(u.kategori, 'abu') : '<span class="kecil">Belum diisi</span>'}</td>` : ''}<td>${u.aktif === '0' ? lencana('Nonaktif', 'abu') : lencana('Aktif', 'ok')}</td><td><button class="btn btn-ghost btn-sm" data-aksi="unit-ubah" data-id="${u.id}">${ikon('ubah', 14)} Ubah</button></td></tr>`).join('')}</tbody></table></div><div class="tabel-kaki">${l.length} unit</div>`;
 }
 function modalUnit(u) {
   u = u || { jenis: TAB_UNIT };
@@ -253,6 +254,7 @@ function modalUnit(u) {
   const m = modal({ judul: u.id ? 'Ubah unit' : 'Tambah unit', lebar: 520, isi: `<form id="f-unit" class="tumpuk" onsubmit="return false">
     <div class="medan"><label>Jenis</label><select class="inp" name="jenis" data-ubah="unit-jenis"><option value="prodi" ${u.jenis === 'prodi' ? 'selected' : ''}>Program studi</option><option value="fakultas" ${u.jenis === 'fakultas' ? 'selected' : ''}>Fakultas</option><option value="rektorat" ${u.jenis === 'rektorat' ? 'selected' : ''}>Rektorat, unit, lembaga, atau biro</option></select></div>
     <div class="medan"><label>Nama <span class="wajib">*</span></label><input class="inp" name="nama" value="${esc(u.nama)}"></div>
+    <div class="medan" id="u-kat-w" ${u.jenis === 'fakultas' ? 'hidden' : ''}><label>Kategori</label><select class="inp" name="kategori" id="u-kat">${opsiKategori(u.jenis, u.kategori)}</select><span class="hint">Dipakai untuk mengelompokkan pilihan unit saat pendaftaran admin.</span></div>
     <div class="medan" id="u-fak" ${u.jenis === 'prodi' ? '' : 'hidden'}><label>Fakultas induk <span class="wajib">*</span></label><select class="inp" name="fakultas_id"><option value="">Pilih fakultas</option>${fk.map(f => `<option value="${f.id}" ${u.fakultas_id === f.id ? 'selected' : ''}>${esc(f.nama)}</option>`).join('')}</select></div>
     ${u.id ? `<label class="centang"><input type="checkbox" name="aktif" ${u.aktif === '0' ? '' : 'checked'}> Unit aktif (muncul pada pilihan formulir)</label>` : ''}</form>`,
     tombol: [{ label: 'Batal', aksi: () => m.tutup() }, { label: 'Simpan', kelas: 'btn-utama', aksi: async () => {
@@ -260,15 +262,19 @@ function modalUnit(u) {
       await api('simpanUnit', d); m.tutup(); toast('Unit tersimpan', 'ok'); S.opsi = null; S.unitPublik = null; pgUnit($('#isi'));
     } }] });
 }
-AKSI['unit-jenis'] = t => { $('#u-fak').hidden = t.value !== 'prodi'; };
+function opsiKategori(jenis, pilih) {
+  const k = (S.opsi.daftar.KATEGORI_UNIT || {})[jenis] || [];
+  return '<option value="">Tanpa kategori</option>' + k.map(x => `<option ${x === pilih ? 'selected' : ''}>${esc(x)}</option>`).join('');
+}
+AKSI['unit-jenis'] = t => { $('#u-fak').hidden = t.value !== 'prodi'; $('#u-kat-w').hidden = t.value === 'fakultas'; $('#u-kat').innerHTML = opsiKategori(t.value, ''); };
 AKSI['unit-baru'] = () => modalUnit();
 AKSI['unit-ubah'] = t => modalUnit(S.unitSemua.find(x => x.id === t.dataset.id));
 AKSI['unit-impor'] = () => {
-  const m = modal({ judul: 'Impor daftar unit', lebar: 640, isi: `<p class="kecil">Tulis satu unit per baris dengan format <b>jenis;nama;fakultas induk</b>. Jenis berisi prodi, fakultas, atau rektorat. Tulis baris fakultas lebih dulu sebelum prodi di bawahnya. Nama yang sudah ada dilewati.</p>
+  const m = modal({ judul: 'Impor daftar unit', lebar: 640, isi: `<p class="kecil">Tulis satu unit per baris dengan format <b>jenis;nama;fakultas induk;kategori</b>. Jenis berisi prodi, fakultas, atau rektorat. Tulis baris fakultas lebih dulu sebelum prodi di bawahnya. Untuk fakultas dan rektorat, kosongkan kolom fakultas induk (contoh: <i>rektorat;LPPM;;Lembaga</i>). Nama yang sudah ada dilewati, hanya kategorinya diperbarui.</p>
     <textarea class="inp" id="u-teks" style="min-height:220px;font-size:13.5px" placeholder="fakultas;Fakultas Ekonomi dan Bisnis&#10;prodi;Manajemen;Fakultas Ekonomi dan Bisnis&#10;rektorat;Lembaga Penelitian"></textarea><div id="u-hasil" style="margin-top:10px"></div>`,
     tombol: [{ label: 'Tutup', aksi: () => m.tutup() }, { label: 'Impor', kelas: 'btn-utama', aksi: async () => {
       const r = await api('imporUnit', { teks: $('#u-teks').value }); S.opsi = null; S.unitPublik = null;
-      $('#u-hasil').innerHTML = `<div class="peringatan ${r.galat.length ? '' : 'ok'}"><b>${r.tambah}</b> unit ditambahkan, ${r.lewati} dilewati.${r.galat.length ? '<br>' + r.galat.map(esc).join('<br>') : ''}</div>`;
+      $('#u-hasil').innerHTML = `<div class="peringatan ${r.galat.length ? '' : 'ok'}"><b>${r.tambah}</b> unit ditambahkan, ${r.diperbarui} kategori diperbarui, ${r.lewati} dilewati.${r.galat.length ? '<br>' + r.galat.map(esc).join('<br>') : ''}</div>`;
       S.unitSemua = await api('daftarUnit'); renderUnit();
     } }] });
 };

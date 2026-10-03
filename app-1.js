@@ -270,8 +270,11 @@ AKSI.auth = t => { S.auth.view = t.dataset.v; tampilAuth(); };
 AKSI['peran-daftar'] = t => {
   const w = $('#w-unit'), sel = $('select[name=unit_id]'), r = t.value, jenis = { admin_prodi: 'prodi', admin_fakultas: 'fakultas', admin_rektorat: 'rektorat' }[r];
   if (!jenis) { w.hidden = true; sel.innerHTML = ''; return; }
-  const u = (S.unitPublik || []).filter(x => x.jenis === jenis);
-  sel.innerHTML = '<option value="">Pilih unit kerja</option>' + u.map(x => `<option value="${x.id}">${esc(x.nama)}</option>`).join('');
+  $('label', w).innerHTML = ({ prodi: 'Program studi', fakultas: 'Fakultas', rektorat: 'Biro, lembaga, atau unit' }[jenis]) + ' <span class="wajib">*</span>';
+  const u = (S.unitPublik || []).filter(x => x.jenis === jenis), urut = [], peta = {};
+  u.forEach(x => { const g = x.kategori || ''; if (!(g in peta)) { peta[g] = []; urut.push(g); } peta[g].push(x); });
+  const opt = x => `<option value="${x.id}">${esc(x.nama)}</option>`;
+  sel.innerHTML = '<option value="">Pilih dari daftar</option>' + urut.map(g => g ? `<optgroup label="${esc(g)}">${peta[g].map(opt).join('')}</optgroup>` : peta[g].map(opt).join('')).join('');
   w.hidden = false;
 };
 AKSI['kirim-ulang-otp'] = async () => {
